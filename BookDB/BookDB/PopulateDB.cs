@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Collections.Generic;
 
 namespace BookDB
 {
@@ -34,29 +35,45 @@ namespace BookDB
         {
 
             IEnumerable<Book> books = ListOfBooks();
+            IEnumerable<Author> authors = ListOfAuthor();
             Console.WriteLine(books);
+
+            foreach(Author i in authors)
+            {
+                Console.WriteLine(i.FirstName + " " + i.LastName + "\n");
+            }
             
         }
 
         public IEnumerable<Author> ListOfAuthor()
         {
             IEnumerable<Author> list =
-                 from item in bookEl.Descendants("book")
-                 select CreateAuthorObject(item);
+                 (from item in bookEl.Descendants("book")
+                 select CreateAuthorObject(item)).Distinct();
 
+            /*List<Author> test = list.GroupBy(item => item.AuthorId)
+                .Select(grp => grp.First()).ToList();
+                */
             return list;
         }
 
         public Author CreateAuthorObject(XElement item)
         {
-            Console.WriteLine("Creating author");
-
             Author obj = new Author();
             obj.FirstName = item.Element("author").Attribute("firstName")?.Value;
             obj.LastName = item.Element("author").Attribute("lastName")?.Value;
 
             return obj;
         }
+
+
+        /*public bool Equals(Author obj)
+        {
+            //if(obj.FirstName == )
+
+            return false;
+        }*/
+
 
         public IEnumerable<Book> ListOfBooks()
         {
@@ -69,12 +86,11 @@ namespace BookDB
 
         private Book CreateBookObject(XElement item)
         {
-            Console.WriteLine("Creating book");
-
             Book obj = new Book();
             obj.Title = item.Element("title")?.Value;
             obj.Description = item.Element("description")?.Value;
             obj.BookId = Int32.Parse(item.Attribute("id").Value);
+            
             return obj;
         }
 
@@ -89,7 +105,6 @@ namespace BookDB
             Console.Read();
 
         }
-
 
     }
 }
