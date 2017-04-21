@@ -15,8 +15,6 @@ namespace BookDB
     class PopulateDB
     {
 
-        private XElement bookEl;
-        private XElement ratingEl;
 
         /// <summary>
         /// The default constructor will load our two
@@ -25,18 +23,17 @@ namespace BookDB
         public PopulateDB()
         {
 
-            bookEl = XElement.Load("../../books.xml");
-            ratingEl = XElement.Load("../../ratings.xml");
-
         }
 
 
-        public void AddDataInDB()
+        public static void AddDataInDB()
         {
+            XElement bookEl = XElement.Load("../../books.xml");
+            XElement ratingEl = XElement.Load("../../ratings.xml"); 
 
-            IEnumerable<Book> books = ListOfBooks();
-            IEnumerable<Author> authors = ListOfAuthor();
-            Console.WriteLine(books);
+            IEnumerable<Author> authors = ListOfAuthor(bookEl);
+            //IEnumerable<Book> books = ListOfBooks(bookEl);        
+            //Console.WriteLine(books);
 
             foreach(Author i in authors)
             {
@@ -45,11 +42,11 @@ namespace BookDB
             
         }
 
-        public IEnumerable<Author> ListOfAuthor()
+        public static IEnumerable<Author> ListOfAuthor(XElement bookEl)
         {
             IEnumerable<Author> list =
                  (from item in bookEl.Descendants("book")
-                 select CreateAuthorObject(item)).Distinct();
+                 select CreateAuthorObject(item));
 
             /*List<Author> test = list.GroupBy(item => item.AuthorId)
                 .Select(grp => grp.First()).ToList();
@@ -57,9 +54,25 @@ namespace BookDB
             return list;
         }
 
-        public Author CreateAuthorObject(XElement item)
+        public static IEnumerable<Book> ListOfBooks(XElement bookEl)
+        {
+            IEnumerable<Book> list =
+                from item in bookEl.Descendants("book")
+                select CreateBookObject(item);
+
+            return list;
+        }
+
+        public static Author CreateAuthorObject(XElement item)
         {
             Author obj = new Author();
+            string temp = item.Attribute("id")?.Value;
+            int value;
+            if (Int32.TryParse(temp, out value))
+                obj.AuthorId = Int32.Parse(temp);
+            //else if (temp == null)
+            //    obj.AuthorId = null;
+
             obj.FirstName = item.Element("author").Attribute("firstName")?.Value;
             obj.LastName = item.Element("author").Attribute("lastName")?.Value;
 
@@ -75,16 +88,9 @@ namespace BookDB
         }*/
 
 
-        public IEnumerable<Book> ListOfBooks()
-        {
-            IEnumerable<Book> list =
-                from item in bookEl.Descendants("book")
-                select CreateBookObject(item);
 
-            return list;
-        }
 
-        private Book CreateBookObject(XElement item)
+        private static Book CreateBookObject(XElement item)
         {
             Book obj = new Book();
             obj.Title = item.Element("title")?.Value;
@@ -100,8 +106,8 @@ namespace BookDB
             //books.xml  ratings.xml
             
             PopulateDB app = new PopulateDB();
-            app.AddDataInDB();
-
+            //app.AddDataInDB();
+            PopulateDB.AddDataInDB();
             Console.Read();
 
         }
