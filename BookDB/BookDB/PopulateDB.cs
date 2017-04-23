@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,6 +36,8 @@ namespace BookDB
             IEnumerable<User> users = ListOfUser(ratingEl);
             IEnumerable<Review> reviews = ListOfReview(ratingEl, books, users);
 
+            AddAllDataInDB(authors, users);
+            Console.WriteLine("Done");
             //foreach (Review i in reviews)
             //    Console.WriteLine(i.Rating);
 
@@ -59,16 +62,40 @@ namespace BookDB
         {
             using(BookClubDB db = new BookClubDB())
             {
-                /*foreach(Author item in authors)
+               foreach(Author item in authors)
                 {
-                    db.Authors.Add(item);
-                    db.Authors.AddRange(item.Books.ToList());
+                    try
+                    {
+                        db.Authors.Add(item);
+                        Console.WriteLine(item.AuthorId + " " + item.FirstName + " " + item.LastName);
+                        db.SaveChanges();
+                    }catch(Exception e)
+                    {
+                        Console.WriteLine(e.Message + e.InnerException + " <");
+                    }
+                }
+
+               /*foreach(User item in users)
+                {
+                    try
+                    {
+                        db.Users.Add(item);
+                    }catch(Exception e)
+                    {
+                        Console.WriteLine(e.Message + " <<");
+                    }
                 }*/
 
-                db.Authors.AddRange(authors);
-                db.Users.AddRange(users);
+                //db.Authors.AddRange(authors);
+                //db.Users.AddRange(users);
+                /*try
+                {
 
-                db.SaveChanges();
+                    db.SaveChanges();
+                }catch(Exception e)
+                {
+                    Console.WriteLine(e.Message + e.InnerException + " <<<");
+                }*/
             }
         } 
 
@@ -114,7 +141,7 @@ namespace BookDB
             {
                 IEnumerable<Review> temp;
                 temp = CreateReviewPerUser(item.Descendants().Where(x => x.Attribute("rating") != null),
-                        users.Where(x => x.UserName == item.Attribute("userId")?.Value).FirstOrDefault()
+                        users.Where(x => x.UserName == item.Attribute("userId")?.Value).First()
                         , books);
 
                 if (temp.Count() != 0)
@@ -139,7 +166,9 @@ namespace BookDB
                     Int32.TryParse(review.Attribute("rating")?.Value, out ratingNum))
                 {
                     Review obj = new Review();
-                    obj.BookId = books.Where(x => x.BookId == bookId).FirstOrDefault().BookId;
+                    Book book = books.Where(x => x.BookId == bookId).First();
+                    obj.BookId = book.BookId;
+                    book.Views += 1;
                     obj.Rating = ratingNum;
                     obj.User = user;
                     list.Add(obj);
@@ -174,7 +203,6 @@ namespace BookDB
 
             obj.FirstName = item.Element("author").Attribute("firstName")?.Value;
             obj.LastName = item.Element("author").Attribute("lastName")?.Value;
-
             return obj;
         }
 
@@ -190,11 +218,11 @@ namespace BookDB
                 obj.BookId = value;
                 obj.Title = item.Element("title")?.Value;
                 obj.Description = item.Element("description")?.Value;
+                obj.Views = 0;
                 authors.Where(
                     x => x.FirstName == item.Element("author").Attribute("firstName")?.Value &&
                     x.LastName == item.Element("author").Attribute("lastName")?.Value).
-                    FirstOrDefault()?.Books.Add(obj);
-
+                    First()?.Books.Add(obj);
                 //auth.Books.Add(obj);
             }
 
