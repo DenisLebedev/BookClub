@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
+using System.Data.Entity.Validation;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,32 +31,39 @@ namespace BookDB
         {
             XElement bookEl = XElement.Load("../../books.xml");
             XElement ratingEl = XElement.Load("../../ratings.xml"); 
-
+           
             IEnumerable<Author> authors = ListOfAuthor(bookEl);
             IEnumerable<Book> books = ListOfBook(bookEl, authors);
             IEnumerable<User> users = ListOfUser(ratingEl);
             IEnumerable<Review> reviews = ListOfReview(ratingEl, books, users);
 
             AddAllDataInDB(authors, users);
-            Console.WriteLine("Done");
+
             //foreach (Review i in reviews)
             //    Console.WriteLine(i.Rating);
 
             //foreach (User i in users)
             //    Console.WriteLine(i.FirstName);
 
-            //foreach (Author i in authors)
-            //    Console.WriteLine(i.FirstName);
+            /*foreach (Author i in authors)
+            {
+                Console.Write(i.FirstName);
+                foreach (Book j in i.Books)
+                    Console.Write("  " + j.Title);
+                Console.WriteLine();
+            }*/
+            
 
-                //foreach (Book i in books) { }
+            //foreach (Book i in books) { }
 
-                /*foreach(Author i in authors)
-                {
-                    Console.WriteLine(i.FirstName + " " + i.LastName);
-                    foreach (Book x in i.Books)
-                        Console.WriteLine(x.Title + " " + x.Description + "< \n");
-                }*/
+            /*foreach(Author i in authors)
+            {
+                Console.WriteLine(i.FirstName + " " + i.LastName);
+                foreach (Book x in i.Books)
+                    Console.WriteLine(x.Title + " " + x.Description + "< \n");
+            }*/
 
+            Console.WriteLine("Done");
         }
 
         private static void AddAllDataInDB (IEnumerable<Author> authors, IEnumerable<User> users)
@@ -69,9 +77,17 @@ namespace BookDB
                         db.Authors.Add(item);
                         Console.WriteLine(item.AuthorId + " " + item.FirstName + " " + item.LastName);
                         db.SaveChanges();
-                    }catch(Exception e)
+                    }
+                    catch (DbEntityValidationException dbEx)
                     {
-                        Console.WriteLine(e.Message + e.InnerException + " <");
+                        Console.WriteLine("ErrorLine: -" + item.FirstName + "-" );
+                        foreach (var validationErrors in dbEx.EntityValidationErrors)
+                        {
+                            foreach (var validationError in validationErrors.ValidationErrors)
+                            {
+                                System.Console.WriteLine("Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
+                            }
+                        }
                     }
                 }
 
@@ -80,7 +96,9 @@ namespace BookDB
                     try
                     {
                         db.Users.Add(item);
-                    }catch(Exception e)
+                        db.SaveChanges();
+                    }
+                    catch(Exception e)
                     {
                         Console.WriteLine(e.Message + " <<");
                     }
@@ -110,7 +128,7 @@ namespace BookDB
             /*List<Author> test = list.GroupBy(item => item.AuthorId)
                 .Select(grp => grp.First()).ToList();
                 */
-            return list;
+            return list.ToList();
         }
 
         private static IEnumerable<Book> ListOfBook(XElement bookEl, IEnumerable<Author> authors)
@@ -119,7 +137,38 @@ namespace BookDB
                 from item in bookEl.Descendants("book")
                 select CreateBookObject(item, authors);
 
-            return list;
+            return list.ToList();
+        }
+
+        private static Book CreateBookObject(XElement item, IEnumerable<Author> authors)
+        {
+
+            Book obj = new Book();
+            string temp = item.Attribute("id")?.Value;
+            int value;
+            if (Int32.TryParse(temp, out value))
+            {
+                obj.BookId = value;
+                obj.Title = item.Element("title")?.Value;
+                obj.Description = item.Element("description")?.Value;
+                obj.Views = 0;
+
+                String test = item.Element("author").Attribute("firstName")?.Value;
+                if (test == null)
+                    test = "";
+                authors.Where(
+                    x => x.FirstName == test &&
+                    x.LastName == item.Element("author").Attribute("lastName")?.Value).
+                First()?.Books.Add(obj);
+                //auth.Books.Add(obj);
+                /*Console.WriteLine("Auth> " + test.FirstName);
+                test.Books.Add(obj);
+                foreach (Book i in test.Books)
+                    Console.WriteLine(i.Title + "\n");*/
+            }
+
+            //auth.Books.Add(obj);
+            return obj;
         }
 
         private static IEnumerable<User> ListOfUser(XElement ratingEl)
@@ -128,7 +177,7 @@ namespace BookDB
                 from item in ratingEl.Descendants("user")
                 select CreateUserObject(item);
 
-            return list;
+            return list.ToList();
         }
 
         private static IEnumerable<Review> ListOfReview(XElement ratingEl, 
@@ -149,7 +198,7 @@ namespace BookDB
                         list.Add(i);
             }
 
-            return list;
+            return list.ToList();
         }
 
         private static IEnumerable<Review> CreateReviewPerUser(IEnumerable <XElement> item, User user,
@@ -200,35 +249,16 @@ namespace BookDB
             int value;
             if (Int32.TryParse(temp, out value))
                 obj.AuthorId = value;
-
-            obj.FirstName = item.Element("author").Attribute("firstName")?.Value;
+            String test = item.Element("author").Attribute("firstName")?.Value;
+            if (test == null)
+                test = "";
+            obj.FirstName = test;
             obj.LastName = item.Element("author").Attribute("lastName")?.Value;
             return obj;
         }
 
 
-        private static Book CreateBookObject(XElement item, IEnumerable<Author> authors)
-        {
 
-            Book obj = new Book();
-            string temp = item.Attribute("id")?.Value;
-            int value;
-            if (Int32.TryParse(temp, out value))
-            {
-                obj.BookId = value;
-                obj.Title = item.Element("title")?.Value;
-                obj.Description = item.Element("description")?.Value;
-                obj.Views = 0;
-                authors.Where(
-                    x => x.FirstName == item.Element("author").Attribute("firstName")?.Value &&
-                    x.LastName == item.Element("author").Attribute("lastName")?.Value).
-                    First()?.Books.Add(obj);
-                //auth.Books.Add(obj);
-            }
-
-            //auth.Books.Add(obj);
-            return obj;
-        }
 
         static void Main(string[] args)
         {
