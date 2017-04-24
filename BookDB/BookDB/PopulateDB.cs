@@ -257,7 +257,10 @@ namespace BookDB
             return obj;
         }
 
-
+        private static string GetValueFromString(string str, string msg = "")
+        {
+            return str;
+        }
 
 
         static void Main(string[] args)
