@@ -39,11 +39,6 @@ namespace BookDB
 
             AddAllDataInDB(authors, users);
 
-            //foreach (Review i in reviews)
-            //    Console.WriteLine(i.Rating);
-
-            //foreach (User i in users)
-            //    Console.WriteLine(i.FirstName);
 
             /*foreach (Author i in authors)
             {
@@ -52,16 +47,14 @@ namespace BookDB
                     Console.Write("  " + j.Title);
                 Console.WriteLine();
             }*/
+
+            /*foreach(User u in users)
+            {
+                foreach (Review r in u.Reviews)
+                    Console.WriteLine(u.FirstName + " " + r.Rating);
+            }*/
             
 
-            //foreach (Book i in books) { }
-
-            /*foreach(Author i in authors)
-            {
-                Console.WriteLine(i.FirstName + " " + i.LastName);
-                foreach (Book x in i.Books)
-                    Console.WriteLine(x.Title + " " + x.Description + "< \n");
-            }*/
 
             Console.WriteLine("Done");
         }
@@ -70,17 +63,39 @@ namespace BookDB
         {
             using(BookClubDB db = new BookClubDB())
             {
-               foreach(Author item in authors)
-                {
+                /*foreach(Author item in authors)
+                 {
+                     try
+                     {
+                         db.Authors.Add(item);
+                         Console.WriteLine(item.AuthorId + " " + item.FirstName + " " + item.LastName);
+                         db.SaveChanges();
+                     }
+                     catch (DbEntityValidationException dbEx)
+                     {
+                         Console.WriteLine("ErrorLine: -" + item.FirstName + "-" );
+                         foreach (var validationErrors in dbEx.EntityValidationErrors)
+                         {
+                             foreach (var validationError in validationErrors.ValidationErrors)
+                             {
+                                 System.Console.WriteLine("Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
+                             }
+                         }
+                     }
+                 }*/
+
+                //db.Authors.AddRange(authors);
+
+                foreach (User item in users)
+                 {
                     try
                     {
-                        db.Authors.Add(item);
-                        Console.WriteLine(item.AuthorId + " " + item.FirstName + " " + item.LastName);
+                        db.Users.Add(item);
                         db.SaveChanges();
                     }
                     catch (DbEntityValidationException dbEx)
                     {
-                        Console.WriteLine("ErrorLine: -" + item.FirstName + "-" );
+                        Console.WriteLine("ErrorLine: -" + item.FirstName + "-");
                         foreach (var validationErrors in dbEx.EntityValidationErrors)
                         {
                             foreach (var validationError in validationErrors.ValidationErrors)
@@ -88,23 +103,13 @@ namespace BookDB
                                 System.Console.WriteLine("Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
                             }
                         }
-                    }
-                }
-
-               /*foreach(User item in users)
-                {
-                    try
+                    }catch(Exception e)
                     {
-                        db.Users.Add(item);
-                        db.SaveChanges();
+                        Console.WriteLine("General Exception: " + e.InnerException);
                     }
-                    catch(Exception e)
-                    {
-                        Console.WriteLine(e.Message + " <<");
-                    }
-                }*/
+                 }
 
-                //db.Authors.AddRange(authors);
+                
                 //db.Users.AddRange(users);
                 /*try
                 {
@@ -131,6 +136,21 @@ namespace BookDB
             return list.ToList();
         }
 
+        private static Author CreateAuthorObject(XElement item)
+        {
+            Author obj = new Author();
+            string temp = item.Attribute("id")?.Value;
+            int value;
+            if (Int32.TryParse(temp, out value))
+                obj.AuthorId = value;
+            /*String test = item.Element("author").Attribute("firstName")?.Value;
+            if (test == null)
+                test = "";*/
+            obj.FirstName = GetValueOrDefault(item.Element("author").Attribute("firstName")?.Value);
+            obj.LastName = item.Element("author").Attribute("lastName")?.Value;
+            return obj;
+        }
+
         private static IEnumerable<Book> ListOfBook(XElement bookEl, IEnumerable<Author> authors)
         {
             IEnumerable<Book> list =
@@ -153,21 +173,16 @@ namespace BookDB
                 obj.Description = item.Element("description")?.Value;
                 obj.Views = 0;
 
-                String test = item.Element("author").Attribute("firstName")?.Value;
+                /*String test = item.Element("author").Attribute("firstName")?.Value;
                 if (test == null)
-                    test = "";
+                    test = "";*/
                 authors.Where(
-                    x => x.FirstName == test &&
+                    x => x.FirstName == GetValueOrDefault(item.Element("author").Attribute("firstName")?.Value) &&
                     x.LastName == item.Element("author").Attribute("lastName")?.Value).
                 First()?.Books.Add(obj);
-                //auth.Books.Add(obj);
-                /*Console.WriteLine("Auth> " + test.FirstName);
-                test.Books.Add(obj);
-                foreach (Book i in test.Books)
-                    Console.WriteLine(i.Title + "\n");*/
+
             }
 
-            //auth.Books.Add(obj);
             return obj;
         }
 
@@ -184,7 +199,7 @@ namespace BookDB
             IEnumerable<Book> books, IEnumerable<User> users)
         {
             List<Review> list = new List<Review>();
-            
+
             //for each user create a list of reviews
             foreach (XElement item in ratingEl.Descendants("user"))
             {
@@ -207,19 +222,22 @@ namespace BookDB
             int bookId;
             int ratingNum;
             List<Review> list = new List<Review>();
-            
-            foreach(XElement review in item)
+
+            foreach (XElement review in item)
             {
                 
                 if (Int32.TryParse(review.Attribute("bookId")?.Value, out bookId) &&
                     Int32.TryParse(review.Attribute("rating")?.Value, out ratingNum))
                 {
                     Review obj = new Review();
+
+                    //Console.WriteLine(books.Where(x => x.BookId == bookId).Count());
+
                     Book book = books.Where(x => x.BookId == bookId).First();
                     obj.BookId = book.BookId;
                     book.Views += 1;
                     obj.Rating = ratingNum;
-                    obj.User = user;
+                    obj.UserName = user.UserName;
                     list.Add(obj);
                     user.Reviews.Add(obj);
                 }
@@ -232,34 +250,20 @@ namespace BookDB
             User obj = new User();
 
             //avoid repetition + 3 search
-            string userName = item.Attribute("userId")?.Value;
+            string userName = GetValueOrDefault(item.Attribute("userId").Value, "");
             obj.UserName = userName;
             obj.FirstName = userName;
-            obj.LastName = item.Attribute("lastName")?.Value;
+            obj.LastName = GetValueOrDefault(item.Attribute("lastName").Value, "Reader");
             obj.Password = userName;
             obj.Country = "CAN";
-            obj.Email = "";
+            obj.Email = null;
             return obj;
         }
 
-        private static Author CreateAuthorObject(XElement item)
-        {
-            Author obj = new Author();
-            string temp = item.Attribute("id")?.Value;
-            int value;
-            if (Int32.TryParse(temp, out value))
-                obj.AuthorId = value;
-            String test = item.Element("author").Attribute("firstName")?.Value;
-            if (test == null)
-                test = "";
-            obj.FirstName = test;
-            obj.LastName = item.Element("author").Attribute("lastName")?.Value;
-            return obj;
-        }
 
-        private static string GetValueFromString(string str, string msg = "")
+        private static string GetValueOrDefault(string str, string def = "")
         {
-            return str;
+            return str == null ? def : str;
         }
 
 
