@@ -18,10 +18,13 @@ namespace ASPBookClub.Controllers
         // GET: Home
         public ActionResult Index()
         {
-            return View();
+            return View((from item in db.Books
+                         orderby (item.Views) descending
+                         select item).Take(10).ToList());
         }
 
         // GET: Book/Details/5
+        [Authorize]
         public ActionResult DetailsBook(int? id)
         {
             if (id == null)
@@ -37,6 +40,7 @@ namespace ASPBookClub.Controllers
         }
 
         // GET: Book/Create
+        [Authorize]
         public ActionResult CreateBook()
         {
             return View();
@@ -47,6 +51,7 @@ namespace ASPBookClub.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public ActionResult CreateBook([Bind(Include = "BookId,Title,Description,Views")] Book book)
         {
             if (ModelState.IsValid)
@@ -60,6 +65,7 @@ namespace ASPBookClub.Controllers
         }
 
         // GET: Book/Edit/5
+        [Authorize]
         public ActionResult EditBook(int? id)
         {
             if (id == null)
@@ -79,6 +85,7 @@ namespace ASPBookClub.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public ActionResult EditBook([Bind(Include = "BookId,Title,Description,Views")] Book book)
         {
             if (ModelState.IsValid)
@@ -91,6 +98,7 @@ namespace ASPBookClub.Controllers
         }
 
         // GET: Book/Delete/5
+        [Authorize]
         public ActionResult DeleteBook(int? id)
         {
             if (id == null)
@@ -108,6 +116,7 @@ namespace ASPBookClub.Controllers
         // POST: Book/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public ActionResult DeleteConfirmedBook(int id)
         {
             Book book = db.Books.Find(id);
@@ -118,6 +127,7 @@ namespace ASPBookClub.Controllers
 
 
         // GET: Author/Details/5
+        [Authorize]
         public ActionResult DetailsAuthor(int? id)
         {
             if (id == null)
@@ -133,6 +143,7 @@ namespace ASPBookClub.Controllers
         }
 
         // GET: Author/Create
+        [Authorize]
         public ActionResult CreateAuthor()
         {
             return View();
@@ -143,6 +154,7 @@ namespace ASPBookClub.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public ActionResult CreateAuthor([Bind(Include = "AuthorId,LastName,FirstName")] Author author)
         {
             if (ModelState.IsValid)
@@ -156,6 +168,7 @@ namespace ASPBookClub.Controllers
         }
 
         // GET: Author/Edit/5
+        [Authorize]
         public ActionResult EditAuthor(int? id)
         {
             if (id == null)
@@ -175,6 +188,7 @@ namespace ASPBookClub.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public ActionResult EditAuthor([Bind(Include = "AuthorId,LastName,FirstName")] Author author)
         {
             if (ModelState.IsValid)
@@ -187,6 +201,7 @@ namespace ASPBookClub.Controllers
         }
 
         // GET: Author/Delete/5
+        [Authorize]
         public ActionResult DeleteAuthor(int? id)
         {
             if (id == null)
@@ -204,6 +219,7 @@ namespace ASPBookClub.Controllers
         // POST: Author/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public ActionResult DeleteConfirmedAuthor(int id)
         {
             Author author = db.Authors.Find(id);

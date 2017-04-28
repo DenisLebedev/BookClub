@@ -1,7 +1,29 @@
-﻿
+﻿@model List<ASPBookClub.Models.Book>
 @{
     ViewBag.Title = "Index";
 }
 
 <h2>Index</h2>
 
+<table class="table">
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Title) has
+                @Html.DisplayFor(modelItem => item.Views) views
+            </td>
+
+            <td>
+                | @Html.ActionLink("Details", "DetailsBook", new { id = item.BookId }) |
+                @*
+                    @Html.ActionLink("Edit", "Edit", new { id = item.CustId }) |                    
+                    @Html.ActionLink("Delete", "Delete", new { id = item.CustId }) |
+                    @Html.ActionLink("Create Purchase", "Create", "Purchase", new { id = item.CustId }, null) |
+                    @Html.ActionLink("Your Purchase", "Index", "Purchase", new { id = item.CustId }, null)
+                   *@
+                </td>
+        </tr>
+    }
+</table>

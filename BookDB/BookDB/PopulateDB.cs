@@ -62,10 +62,6 @@ namespace BookDB
                  select CreateAuthorObject(item)).
                  GroupBy(x => x.FirstName + x.LastName).Select(x => x.First()).Distinct();
 
-            //list = list.GroupBy(x => x.FirstName + x.LastName).Select(x => x.First()).Distinct();
-            /*List<Author> test = list.GroupBy(item => item.AuthorId)
-                .Select(grp => grp.First()).ToList();
-                */
             return list.ToList();
         }
 
