@@ -1,89 +1,224 @@
-﻿using System;
+﻿using ASPBookClub.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Data;
+using System.Data.Entity;
+using System.Net;
+
 
 namespace ASPBookClub.Controllers
 {
     public class HomeController : Controller
     {
+        private BookClubEntities db = new BookClubEntities();
+
         // GET: Home
         public ActionResult Index()
         {
             return View();
         }
 
-        // GET: Home/Details/5
-        public ActionResult Details(int id)
+        // GET: Book/Details/5
+        public ActionResult DetailsBook(int? id)
         {
-            return View();
-        }
-
-        // GET: Home/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Home/Create
-        [HttpPost]
-        public ActionResult Create(FormCollection collection)
-        {
-            try
+            if (id == null)
             {
-                // TODO: Add insert logic here
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Book book = db.Books.Find(id);
+            if (book == null)
+            {
+                return HttpNotFound();
+            }
+            return View(book);
+        }
 
+        // GET: Book/Create
+        public ActionResult CreateBook()
+        {
+            return View();
+        }
+
+        // POST: Book/Create
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult CreateBook([Bind(Include = "BookId,Title,Description,Views")] Book book)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Books.Add(book);
+                db.SaveChanges();
                 return RedirectToAction("Index");
             }
-            catch
-            {
-                return View();
-            }
+
+            return View(book);
         }
 
-        // GET: Home/Edit/5
-        public ActionResult Edit(int id)
+        // GET: Book/Edit/5
+        public ActionResult EditBook(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Book book = db.Books.Find(id);
+            if (book == null)
+            {
+                return HttpNotFound();
+            }
+            return View(book);
+        }
+
+        // POST: Book/Edit/5
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult EditBook([Bind(Include = "BookId,Title,Description,Views")] Book book)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Entry(book).State = EntityState.Modified;
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            return View(book);
+        }
+
+        // GET: Book/Delete/5
+        public ActionResult DeleteBook(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Book book = db.Books.Find(id);
+            if (book == null)
+            {
+                return HttpNotFound();
+            }
+            return View(book);
+        }
+
+        // POST: Book/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirmedBook(int id)
+        {
+            Book book = db.Books.Find(id);
+            db.Books.Remove(book);
+            db.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+
+        // GET: Author/Details/5
+        public ActionResult DetailsAuthor(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Author author = db.Authors.Find(id);
+            if (author == null)
+            {
+                return HttpNotFound();
+            }
+            return View(author);
+        }
+
+        // GET: Author/Create
+        public ActionResult CreateAuthor()
         {
             return View();
         }
 
-        // POST: Home/Edit/5
+        // POST: Author/Create
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        public ActionResult Edit(int id, FormCollection collection)
+        [ValidateAntiForgeryToken]
+        public ActionResult CreateAuthor([Bind(Include = "AuthorId,LastName,FirstName")] Author author)
         {
-            try
+            if (ModelState.IsValid)
             {
-                // TODO: Add update logic here
-
+                db.Authors.Add(author);
+                db.SaveChanges();
                 return RedirectToAction("Index");
             }
-            catch
+
+            return View(author);
+        }
+
+        // GET: Author/Edit/5
+        public ActionResult EditAuthor(int? id)
+        {
+            if (id == null)
             {
-                return View();
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-        }
-
-        // GET: Home/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: Home/Delete/5
-        [HttpPost]
-        public ActionResult Delete(int id, FormCollection collection)
-        {
-            try
+            Author author = db.Authors.Find(id);
+            if (author == null)
             {
-                // TODO: Add delete logic here
+                return HttpNotFound();
+            }
+            return View(author);
+        }
 
+        // POST: Author/Edit/5
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult EditAuthor([Bind(Include = "AuthorId,LastName,FirstName")] Author author)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Entry(author).State = EntityState.Modified;
+                db.SaveChanges();
                 return RedirectToAction("Index");
             }
-            catch
+            return View(author);
+        }
+
+        // GET: Author/Delete/5
+        public ActionResult DeleteAuthor(int? id)
+        {
+            if (id == null)
             {
-                return View();
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
+            Author author = db.Authors.Find(id);
+            if (author == null)
+            {
+                return HttpNotFound();
+            }
+            return View(author);
+        }
+
+        // POST: Author/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirmedAuthor(int id)
+        {
+            Author author = db.Authors.Find(id);
+            db.Authors.Remove(author);
+            db.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

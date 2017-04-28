@@ -157,17 +157,14 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.6.2.js" />
     <Content Include="Web.config" />
-    <Content Include="Views\Author\Create.cshtml" />
-    <Content Include="Views\Author\Delete.cshtml" />
-    <Content Include="Views\Author\Details.cshtml" />
-    <Content Include="Views\Author\Edit.cshtml" />
-    <Content Include="Views\Author\Index.cshtml" />
+    <Content Include="Views\Home\CreateAuthor.cshtml" />
+    <Content Include="Views\Home\DeleteAuthor.cshtml" />
+    <Content Include="Views\Home\DetailsAuthor.cshtml" />
+    <Content Include="Views\Home\EditAuthor.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\RouteConfig.cs" />
-    <Compile Include="Controllers\AuthorController.cs" />
-    <Compile Include="Controllers\BookController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -216,11 +213,10 @@
     </Content>
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
-    <Content Include="Views\Book\Create.cshtml" />
-    <Content Include="Views\Book\Delete.cshtml" />
-    <Content Include="Views\Book\Details.cshtml" />
-    <Content Include="Views\Book\Edit.cshtml" />
-    <Content Include="Views\Book\Index.cshtml" />
+    <Content Include="Views\Home\CreateBook.cshtml" />
+    <Content Include="Views\Home\DeleteBook.cshtml" />
+    <Content Include="Views\Home\DetailsBook.cshtml" />
+    <Content Include="Views\Home\EditBook.cshtml" />
     <Content Include="Scripts\jquery-1.10.2.min.map" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
