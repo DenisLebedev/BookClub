@@ -15,7 +15,7 @@ namespace ASPBookClub.Controllers
         private BookClubEntities db = new BookClubEntities();
 
         // GET: User
-        //[Authorize (User = username)]
+        //[Authorize]
         public ActionResult Index(string username)
         {
             //ViewBag or class
@@ -24,31 +24,29 @@ namespace ASPBookClub.Controllers
         
         private List<Review> RecommendedBooks(string userN)
         {
-            /*List<Book> list = (from item in db.Books
-                               orderby (item.Views) descending
-                               select item).Take(10).ToList();*/
 
-            List<Review> list = (from item in db.Reviews
+            List<Review> userRead = (from item in db.Reviews
                    where item.UserName == userN
                    select item).ToList();
 
             IEnumerable<IGrouping<string, Review>> test = 
                 from bk in db.Reviews
-                /*where list.Where(x => x.Book.Title == bk.Book.Title)
-                      .First() != null*/
+                    /*where list.Where(x => x.Book.Title == bk.Book.Title)
+                          .First() != null*/
+                where bk.UserName != userN
                 group bk by bk.UserName into groupedUser
-                orderby groupedUser.Key
                 select groupedUser;
 
 
-            int? highRat = 0;
-            int? temp = 0;
+            int? highRat = 0;          
             string commonU = "";
             foreach(var person in test)
             {
-                foreach(var review in person)
+                int? temp = 0;
+
+                foreach (var review in person)
                 {
-                    int? rating = list.Where(x => x.Book.Title ==
+                    int? rating = userRead.Where(x => x.Book.Title ==
                             review.Book.Title).FirstOrDefault()?.Rating;
                     if(rating != null)
                         temp += rating * review.Rating;
@@ -60,14 +58,69 @@ namespace ASPBookClub.Controllers
                     commonU = person.Key;
                 }
 
-                temp = 0;
             }
 
-      
-            return (from item in db.Reviews
-                    where item.UserName == commonU
-                    orderby item.Rating descending
-                    select item).Take(10).ToList(); 
+            List<Review> tempList = (from item in db.Reviews
+                                     where item.UserName == commonU
+                                         && item.Rating >= 0
+                                     orderby item.Rating descending
+                                     select item).Take(10).ToList();
+
+            foreach(Review t in tempList)
+            {
+                Review temp = userRead.Where(x => x.Book == t.Book).FirstOrDefault();
+
+                if (temp != null)
+                    tempList.Remove(temp);
+            }
+
+
+            return tempList; 
+        }
+
+
+        // GET: Home
+        public ActionResult BookDetail(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Book book = db.Books.Find(id);
+            if (book == null)
+            {
+                return HttpNotFound();
+            }
+
+            ViewBag.averageRat =  AverageRating(book);
+
+            if (ViewBag.averageRat == null)
+                ViewBag.averageRat = "None";
+
+            return View(book);
+        }
+
+
+        private double? AverageRating(Book bk)
+        {
+            /*var avgRat = from t in db.Books
+                         where bk == t
+                         group bk.Reviews by bk into groupByRev
+                         select ;*/
+
+            var avg = (from t in db.Reviews
+                       where t.Book == bk
+                       select new
+                       {
+                           Rating = t.Rating,
+                           Views = t.Book.Views
+                           });
+
+            double? temp = 0;
+            foreach (var t in avg)
+                temp += t.Rating;
+
+            return temp / avg.ElementAt(0).Views;
         }
 
         // GET: User/Details/5
