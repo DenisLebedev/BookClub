@@ -15,9 +15,59 @@ namespace ASPBookClub.Controllers
         private BookClubEntities db = new BookClubEntities();
 
         // GET: User
-        public ActionResult Index()
+        //[Authorize (User = username)]
+        public ActionResult Index(string username)
         {
-            return View(db.Users.ToList());
+            //ViewBag or class
+            return View(RecommendedBooks(username));
+        }
+        
+        private List<Review> RecommendedBooks(string userN)
+        {
+            /*List<Book> list = (from item in db.Books
+                               orderby (item.Views) descending
+                               select item).Take(10).ToList();*/
+
+            List<Review> list = (from item in db.Reviews
+                   where item.UserName == userN
+                   select item).ToList();
+
+            IEnumerable<IGrouping<string, Review>> test = 
+                from bk in db.Reviews
+                /*where list.Where(x => x.Book.Title == bk.Book.Title)
+                      .First() != null*/
+                group bk by bk.UserName into groupedUser
+                orderby groupedUser.Key
+                select groupedUser;
+
+
+            int? highRat = 0;
+            int? temp = 0;
+            string commonU = "";
+            foreach(var person in test)
+            {
+                foreach(var review in person)
+                {
+                    int? rating = list.Where(x => x.Book.Title ==
+                            review.Book.Title).FirstOrDefault()?.Rating;
+                    if(rating != null)
+                        temp += rating * review.Rating;
+                }
+
+                if (temp > highRat)
+                {
+                    highRat = temp;
+                    commonU = person.Key;
+                }
+
+                temp = 0;
+            }
+
+      
+            return (from item in db.Reviews
+                    where item.UserName == commonU
+                    orderby item.Rating descending
+                    select item).Take(10).ToList(); 
         }
 
         // GET: User/Details/5
@@ -36,7 +86,7 @@ namespace ASPBookClub.Controllers
         }
 
         // GET: User/Create
-        public ActionResult Create()
+        public ActionResult Register()
         {
             return View();
         }
@@ -46,7 +96,7 @@ namespace ASPBookClub.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "UserName,Password,LastName,FirstName,Email,Country")] User user)
+        public ActionResult Register([Bind(Include = "UserName,Password,LastName,FirstName,Email,Country")] User user)
         {
             if (ModelState.IsValid)
             {
@@ -57,6 +107,42 @@ namespace ASPBookClub.Controllers
 
             return View(user);
         }
+
+
+
+        public ActionResult Login(string returnUrl)
+        {
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Login([Bind(Include = "UserName,Password")] User user)
+        {
+            //db.Users.Where(x => x.UserName == user.UserName).Count() != 0
+            if (ModelState.IsValid)
+            {
+                
+                User userObj = (from item in db.Users
+                                where item.UserName == user.UserName 
+                                    && item.Password == user.Password
+                                select item).FirstOrDefault();
+
+
+                if (userObj != null)
+                {
+                    return RedirectToAction("Index", "User", new { userObj.UserName });
+                }
+            }
+
+            //ViewBag.ReturnUrl = returnUrl;
+            ModelState.AddModelError("", "Error: password or username invalid");
+            return View(user);
+        }
+
+
+
 
         // GET: User/Edit/5
         public ActionResult Edit(string id)

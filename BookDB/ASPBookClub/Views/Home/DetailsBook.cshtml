@@ -11,7 +11,7 @@
     <hr />
     <dl class="dl-horizontal">
         <dt>
-            @Html.DisplayNameFor(model => model.Title)
+            @Html.DisplayNameFor(model => model.Title): 
         </dt>
 
         <dd>
@@ -19,7 +19,7 @@
         </dd>
 
         <dt>
-            @Html.DisplayNameFor(model => model.Description)
+            @Html.DisplayNameFor(model => model.Description):
         </dt>
 
         <dd>
@@ -27,12 +27,29 @@
         </dd>
 
         <dt>
-            @Html.DisplayNameFor(model => model.Views)
+            @Html.DisplayNameFor(model => model.Views):
         </dt>
 
         <dd>
             @Html.DisplayFor(model => model.Views)
         </dd>
+
+        @foreach (var item in Model.Authors)
+        {
+            <dt>                
+                First name:
+            </dt>
+            <dd>
+                @item.FirstName
+            </dd>
+            <dt>
+                Last name:
+            </dt>
+            <dd>
+                @item.LastName
+            </dd>
+            
+        }
 
     </dl>
 </div>

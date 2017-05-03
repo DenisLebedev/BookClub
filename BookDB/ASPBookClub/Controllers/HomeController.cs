@@ -24,7 +24,6 @@ namespace ASPBookClub.Controllers
         }
 
         // GET: Book/Details/5
-        [Authorize]
         public ActionResult DetailsBook(int? id)
         {
             if (id == null)

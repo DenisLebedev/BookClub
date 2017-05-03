@@ -1,4 +1,5 @@
-﻿@model IEnumerable<ASPBookClub.Models.User>
+﻿@model List<ASPBookClub.Models.Review>
+
 
 @{
     ViewBag.Title = "Index";
@@ -6,52 +7,32 @@
 
 <h2>Index</h2>
 
-<p>
-    @Html.ActionLink("Create New", "Create")
-</p>
 <table class="table">
+
     <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.Password)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.LastName)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.FirstName)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Email)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Country)
-        </th>
-        <th></th>
+        <th>Top 10 recommended books</th>
     </tr>
 
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.Password)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.LastName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.FirstName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Email)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Country)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.UserName }) |
-            @Html.ActionLink("Details", "Details", new { id=item.UserName }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.UserName })
-        </td>
-    </tr>
-}
+    @foreach (var item in Model)
+    {
+        <tr>
 
+            <td>
+                @Html.DisplayFor(modelItem => item.Book.Title)
+                @Html.DisplayFor(modelItem => item.Rating)
+            </td>
+
+            <td>
+                @*
+                    | @Html.ActionLink("Details", "DetailsBook", new { id = item.BookId }) |
+
+                     @Html.ActionLink("Edit", "Edit", new { id = item.CustId }) |
+                     @Html.ActionLink("Delete", "Delete", new { id = item.CustId }) |
+                     @Html.ActionLink("Create Purchase", "Create", "Purchase", new { id = item.CustId }, null) |
+                     @Html.ActionLink("Your Purchase", "Index", "Purchase", new { id = item.CustId }, null)
+                *@
+            </td>
+        </tr>
+    }
 </table>
+

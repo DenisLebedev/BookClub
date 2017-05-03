@@ -4,12 +4,19 @@
 }
 
 <h2>Index</h2>
+<h4> @Html.ActionLink("Sign in", "Login", "User", null, null) | @Html.ActionLink("Sign up", "Register", "User", null, null)</h4>
 
 <table class="table">
+
+    
+    <tr>
+        <th> Top 10 most viewed books</th>
+    </tr>
 
     @foreach (var item in Model)
     {
         <tr>
+            
             <td>
                 @Html.DisplayFor(modelItem => item.Title) has
                 @Html.DisplayFor(modelItem => item.Views) views
@@ -17,7 +24,7 @@
 
             <td>
                 | @Html.ActionLink("Details", "DetailsBook", new { id = item.BookId }) |
-                @*
+                @* 
                     @Html.ActionLink("Edit", "Edit", new { id = item.CustId }) |                    
                     @Html.ActionLink("Delete", "Delete", new { id = item.CustId }) |
                     @Html.ActionLink("Create Purchase", "Create", "Purchase", new { id = item.CustId }, null) |
