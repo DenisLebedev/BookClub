@@ -39,7 +39,7 @@ namespace ASPBookClub.Controllers
                                      where item.UserName == userN
                                      select item).ToList();
 
-            //any, all
+            
             IEnumerable<IGrouping<string, Review>> allusersRev =
                 from bk in db.Reviews
                 where bk.UserName != userN
@@ -69,6 +69,8 @@ namespace ASPBookClub.Controllers
 
             }
 
+           
+
             IEnumerable<Book> tempList = (from item in db.Reviews
                                      where item.UserName == commonU
                                          && item.Rating >= 0
@@ -80,7 +82,8 @@ namespace ASPBookClub.Controllers
             for(int i = 0; i < tempList.Count() && counter < 10; i++)
             {
                 Book temp = userRead.Where(x => 
-                    x.Book.BookId == tempList.ElementAt(i).BookId).FirstOrDefault()?.Book;
+                    x.BookId == tempList.ElementAt(i).BookId).FirstOrDefault()?.Book;
+
 
                 if(temp != null)
                 {
@@ -90,7 +93,6 @@ namespace ASPBookClub.Controllers
 
             }
 
-
             return finalList;
         }
 
@@ -98,6 +100,8 @@ namespace ASPBookClub.Controllers
         // GET: Book/Details/5
         public ActionResult DetailsBook(int? id)
         {
+            
+
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
@@ -107,8 +111,59 @@ namespace ASPBookClub.Controllers
             {
                 return HttpNotFound();
             }
+            else
+            {
+                book.Views += 1;
+                db.SaveChanges();
+            }
+
+            if (User.Identity.Name != "")
+            {
+                IncrementRatingForDisplay();
+                ViewBag.averageRat = AverageRating(book);
+                if (ViewBag.averageRat == null)
+                    ViewBag.averageRat = "None";
+                else
+                    ViewBag.averageRat = 
+                        Math.Round(ViewBag.averageRat,2);
+            }
+
             return View(book);
         }
+
+
+        private double? AverageRating(Book bk)
+        {
+
+            var avg = (from t in db.Reviews
+                       where t.Book.BookId == bk.BookId
+                       select new
+                       {
+                           Rating = t.Rating,
+                       }).ToList().Average(x=> x.Rating);
+
+            return avg;
+        }
+
+
+        private void IncrementRatingForDisplay()
+        {
+            foreach (var t in db.Reviews)
+            {
+
+                    if (t.Rating == -5)
+                        t.Rating = 1;
+                    else if (t.Rating == -3)
+                        t.Rating = 2;
+                    else if (t.Rating == 0)
+                        t.Rating = 3;
+                    else if (t.Rating == 3)
+                        t.Rating = 4;
+                    /*else if (t.Rating == 5)
+                        t.Rating = 5;*/
+                
+            }
+        } 
 
         // GET: Book/Create
         [Authorize]
@@ -168,33 +223,6 @@ namespace ASPBookClub.Controllers
             return View(book);
         }
 
-        // GET: Book/Delete/5
-        [Authorize]
-        public ActionResult DeleteBook(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Book book = db.Books.Find(id);
-            if (book == null)
-            {
-                return HttpNotFound();
-            }
-            return View(book);
-        }
-
-        // POST: Book/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        [Authorize]
-        public ActionResult DeleteConfirmedBook(int id)
-        {
-            Book book = db.Books.Find(id);
-            db.Books.Remove(book);
-            db.SaveChanges();
-            return RedirectToAction("Index");
-        }
 
 
         // GET: Author/Details/5
@@ -210,8 +238,18 @@ namespace ASPBookClub.Controllers
             {
                 return HttpNotFound();
             }
-            return View(author);
+
+            Author temp = new Author()
+            {
+                Books = author.Books.OrderByDescending(x => x.Views).ToList(),
+                FirstName = author.FirstName,
+                LastName = author.LastName
+                
+            };
+
+            return View(temp);
         }
+
 
         // GET: Author/Create
         [Authorize]
@@ -237,6 +275,21 @@ namespace ASPBookClub.Controllers
 
             return View(author);
         }
+
+        [Authorize]
+        public ActionResult CreateReview(int? id)
+        {
+            return View();
+        }
+
+        /*[HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public ActionResult CreateReview(int? id, [Bind(Include = "")] )
+        {
+            return View();
+        }*/
+
 
         // GET: Author/Edit/5
         [Authorize]
@@ -271,33 +324,6 @@ namespace ASPBookClub.Controllers
             return View(author);
         }
 
-        // GET: Author/Delete/5
-        [Authorize]
-        public ActionResult DeleteAuthor(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Author author = db.Authors.Find(id);
-            if (author == null)
-            {
-                return HttpNotFound();
-            }
-            return View(author);
-        }
-
-        // POST: Author/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        [Authorize]
-        public ActionResult DeleteConfirmedAuthor(int id)
-        {
-            Author author = db.Authors.Find(id);
-            db.Authors.Remove(author);
-            db.SaveChanges();
-            return RedirectToAction("Index");
-        }
 
         protected override void Dispose(bool disposing)
         {

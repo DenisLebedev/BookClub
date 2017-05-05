@@ -8,6 +8,7 @@
 
 <div>
     <h4>Book</h4>
+    <h5> @Html.ActionLink("Back to List", "Index") </h5>
     <hr />
     <dl class="dl-horizontal">
         <dt>
@@ -33,25 +34,71 @@
         <dd>
             @Html.DisplayFor(model => model.Views)
         </dd>
+        
+        @if (User.Identity.Name != "")
+        {
+            <dt>
+                Average review: 
+            </dt>
+            <dd>
+                @ViewBag.averageRat
+            </dd>
+        }
+        
 
         @foreach (var item in Model.Authors)
         {
             <dt>                
-                First name:
+                Author name:
             </dt>
             <dd>
-                @item.FirstName
-            </dd>
-            <dt>
-                Last name:
-            </dt>
-            <dd>
-                @item.LastName
-            </dd>
-            
+                @if (User.Identity.Name == "")
+                {
+                    @:@item.LastName, @item.FirstName
+                }
+                else
+                {
+                    @Html.ActionLink( item.LastName + ", " + item.FirstName,
+                        "DetailsAuthor", new { id = item.AuthorId })
+                }
+            </dd>      
         }
 
     </dl>
+
+        @if (User.Identity.Name != "")
+        {
+            @Html.ActionLink("Leave your review!",
+                        "CreateReview", new { id = Model.BookId })
+
+            <table class="table">
+
+                <tr>
+                    
+                <th> Reviews made by users: </th>
+
+                </tr>
+
+                @foreach (var item in Model.Reviews)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.UserName) has rated
+                            @Html.DisplayFor(modelItem => item.Rating)/5
+                            
+                            @if (item.Content != null)
+                            {
+                                @:and says: @Html.DisplayFor(modelItem => item.Content) 
+                            }
+                        </td>
+
+                    </tr>
+                }
+            </table>
+        }
+
+
+
 </div>
 <p>
     @Html.ActionLink("Back to List", "Index")

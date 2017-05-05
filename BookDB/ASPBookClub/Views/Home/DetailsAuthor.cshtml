@@ -27,6 +27,27 @@
         </dd>
 
     </dl>
+
+    <table class="table">
+
+        <tr>
+            <th> Books written by this author: </th>
+        </tr>
+
+        @foreach (var item in Model.Books)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Title)
+                </td>
+                <td>
+                    | @Html.ActionLink("Details", "DetailsBook", new { id = item.BookId }) |
+                </td>
+            </tr>
+        }
+
+    </table>
+
 </div>
 <p>
     @Html.ActionLink("Edit", "Edit", new { id = Model.AuthorId }) |
