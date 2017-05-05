@@ -4,13 +4,27 @@
 }
 
 <h2>Index</h2>
-<h4> @Html.ActionLink("Sign in", "Login", "User", null, null) | @Html.ActionLink("Sign up", "Register", "User", null, null)</h4>
+@if (User.Identity.Name == "")
+{
+    <h4> @Html.ActionLink("Sign in", "Login", "User", new { returnUrl = "/Home/Index" }, null) | @Html.ActionLink("Sign up", "Register", "User", null, null)</h4>
+}
+else
+{
+    <h4> @Html.ActionLink("Sign out", "LogOff", "User", null, null) </h4>
+}
 
 <table class="table">
 
     
     <tr>
-        <th> Top 10 most viewed books</th>
+        @if (User.Identity.Name == "")
+        {
+            <th> Top 10 most viewed books</th>
+        }
+        else
+        {
+            <th> Top 10 recommended books</th>
+        }
     </tr>
 
     @foreach (var item in Model)
@@ -32,5 +46,5 @@
                    *@
                 </td>
         </tr>
-    }
+        }
 </table>

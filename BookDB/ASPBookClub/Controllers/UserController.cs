@@ -7,6 +7,7 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using ASPBookClub.Models;
+using System.Web.Security;
 
 namespace ASPBookClub.Controllers
 {
@@ -14,12 +15,11 @@ namespace ASPBookClub.Controllers
     {
         private BookClubEntities db = new BookClubEntities();
 
-        // GET: User
         //[Authorize]
-        public ActionResult Index(string username)
+        /*[HttpPost]
+        public ActionResult Index()
         {
-            //ViewBag or class
-            return View(RecommendedBooks(username));
+            return View(RecommendedBooks(User.Identity.Name));
         }
         
         private List<Review> RecommendedBooks(string userN)
@@ -29,18 +29,17 @@ namespace ASPBookClub.Controllers
                    where item.UserName == userN
                    select item).ToList();
 
-            IEnumerable<IGrouping<string, Review>> test = 
+            //any, all
+            IEnumerable<IGrouping<string, Review>> allusersRev = 
                 from bk in db.Reviews
-                    /*where list.Where(x => x.Book.Title == bk.Book.Title)
-                          .First() != null*/
                 where bk.UserName != userN
                 group bk by bk.UserName into groupedUser
                 select groupedUser;
 
 
             int? highRat = 0;          
-            string commonU = "";
-            foreach(var person in test)
+            string commonU = null;
+            foreach(var person in allusersRev)
             {
                 int? temp = 0;
 
@@ -63,6 +62,7 @@ namespace ASPBookClub.Controllers
             List<Review> tempList = (from item in db.Reviews
                                      where item.UserName == commonU
                                          && item.Rating >= 0
+                                         && !userRead.Contains(item)
                                      orderby item.Rating descending
                                      select item).Take(10).ToList();
 
@@ -76,7 +76,7 @@ namespace ASPBookClub.Controllers
 
 
             return tempList; 
-        }
+        }*/
 
 
         // GET: Home
@@ -103,24 +103,21 @@ namespace ASPBookClub.Controllers
 
         private double? AverageRating(Book bk)
         {
-            /*var avgRat = from t in db.Books
-                         where bk == t
-                         group bk.Reviews by bk into groupByRev
-                         select ;*/
 
             var avg = (from t in db.Reviews
-                       where t.Book == bk
+                       where t.Book.BookId == bk.BookId
                        select new
                        {
                            Rating = t.Rating,
-                           Views = t.Book.Views
-                           });
+                           //Views = t.Book.Views
+                           }).ToList().Average(x=> x.Rating);
 
-            double? temp = 0;
+            /*double? temp = 0;
             foreach (var t in avg)
                 temp += t.Rating;
 
-            return temp / avg.ElementAt(0).Views;
+            return temp / avg.ElementAt(0).Views;*/
+            return avg;
         }
 
         // GET: User/Details/5
@@ -171,7 +168,7 @@ namespace ASPBookClub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Login([Bind(Include = "UserName,Password")] User user)
+        public ActionResult Login([Bind(Include = "UserName,Password")] User user, string returnUrl)
         {
             //db.Users.Where(x => x.UserName == user.UserName).Count() != 0
             if (ModelState.IsValid)
@@ -180,21 +177,28 @@ namespace ASPBookClub.Controllers
                 User userObj = (from item in db.Users
                                 where item.UserName == user.UserName 
                                     && item.Password == user.Password
-                                select item).FirstOrDefault();
+                                select item).FirstOrDefault<User>();
 
 
                 if (userObj != null)
                 {
-                    return RedirectToAction("Index", "User", new { userObj.UserName });
+                    FormsAuthentication.RedirectFromLoginPage(userObj.UserName, false);
                 }
             }
 
             //ViewBag.ReturnUrl = returnUrl;
             ModelState.AddModelError("", "Error: password or username invalid");
-            return View(user);
+            return View();
         }
 
-
+        
+        public ActionResult LogOff()
+        {
+            FormsAuthentication.SignOut();
+            return RedirectToAction("Index", "Home");
+        } 
+             
+        
 
 
         // GET: User/Edit/5

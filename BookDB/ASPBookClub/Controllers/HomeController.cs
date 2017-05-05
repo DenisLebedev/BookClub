@@ -18,10 +18,82 @@ namespace ASPBookClub.Controllers
         // GET: Home
         public ActionResult Index()
         {
-            return View((from item in db.Books
-                         orderby (item.Views) descending
-                         select item).Take(10).ToList());
+            List<Book> list;
+            list = User.Identity.Name != "" ? 
+                RecommendedBooks(User.Identity.Name) : TopViewedBooks();
+
+
+                return View(list);
         }
+
+        private List<Book> TopViewedBooks()
+        {
+            return (from item in db.Books
+                    orderby (item.Views) descending
+                    select item).Take(10).ToList();
+        }
+        private List<Book> RecommendedBooks(string userN)
+        {
+
+            List<Review> userRead = (from item in db.Reviews
+                                     where item.UserName == userN
+                                     select item).ToList();
+
+            //any, all
+            IEnumerable<IGrouping<string, Review>> allusersRev =
+                from bk in db.Reviews
+                where bk.UserName != userN
+                group bk by bk.UserName into groupedUser
+                select groupedUser;
+
+
+            int? highRat = 0;
+            string commonU = null;
+            foreach (var person in allusersRev)
+            {
+                int? temp = 0;
+
+                foreach (var review in person)
+                {
+                    int? rating = userRead.Where(x => x.BookId ==
+                            review.BookId).FirstOrDefault()?.Rating;
+                    if (rating != null)
+                        temp += rating * review.Rating;
+                }
+
+                if (temp > highRat)
+                {
+                    highRat = temp;
+                    commonU = person.Key;
+                }
+
+            }
+
+            IEnumerable<Book> tempList = (from item in db.Reviews
+                                     where item.UserName == commonU
+                                         && item.Rating >= 0
+                                     orderby item.Rating descending
+                                     select item.Book);
+
+            List<Book> finalList = new List<Book>();
+            int counter = 0;
+            for(int i = 0; i < tempList.Count() && counter < 10; i++)
+            {
+                Book temp = userRead.Where(x => 
+                    x.Book.BookId == tempList.ElementAt(i).BookId).FirstOrDefault()?.Book;
+
+                if(temp != null)
+                {
+                    counter++;
+                    finalList.Add(temp);
+                }
+
+            }
+
+
+            return finalList;
+        }
+
 
         // GET: Book/Details/5
         public ActionResult DetailsBook(int? id)
