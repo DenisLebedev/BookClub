@@ -11,13 +11,16 @@ namespace ASPBookClub.Models
 {
     using System;
     using System.Collections.Generic;
-    
+    using System.ComponentModel.DataAnnotations;
+
     public partial class Review
     {
         public int ReviewId { get; set; }
         public int BookId { get; set; }
         public string UserName { get; set; }
+        [RegularExpression ("[012345]", ErrorMessage = "The rating should be between 0 and 5")]
         public Nullable<int> Rating { get; set; }
+        //[RegularExpression("[<>;{}\\|^*]", ErrorMessage = "Illegal Character")]
         public string Content { get; set; }
     
         public virtual Book Book { get; set; }

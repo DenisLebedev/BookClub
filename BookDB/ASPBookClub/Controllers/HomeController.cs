@@ -7,7 +7,7 @@ using System.Web.Mvc;
 using System.Data;
 using System.Data.Entity;
 using System.Net;
-
+using System.Web.Routing;
 
 namespace ASPBookClub.Controllers
 {
@@ -159,9 +159,7 @@ namespace ASPBookClub.Controllers
                         t.Rating = 3;
                     else if (t.Rating == 3)
                         t.Rating = 4;
-                    /*else if (t.Rating == 5)
-                        t.Rating = 5;*/
-                
+               
             }
         } 
 
@@ -279,17 +277,96 @@ namespace ASPBookClub.Controllers
         [Authorize]
         public ActionResult CreateReview(int? id)
         {
-            return View();
+            if (id == null)
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            
+            Book book = db.Books.Find(id);
+            User user = db.Users.Find(User.Identity.Name);
+
+            if (book == null || user == null)
+                return HttpNotFound();
+
+            /*if(ViewBag.bookObj == null)
+                return HttpNotFound();*/
+
+            Review review = new Review()
+            {
+                BookId = book.BookId,
+                Book = book,
+                UserName = user.UserName,
+                User = user
+            };
+
+            return View(review);
         }
 
-        /*[HttpPost]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public ActionResult CreateReview(int? id, [Bind(Include = "")] )
+        public ActionResult CreateReview([Bind(Include = "Bookid, UserName, Rating, Content")] Review review)
         {
-            return View();
-        }*/
 
+            if (review == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            User user = db.Users.Find(review.UserName);
+            Book book = db.Books.Find(review.BookId);
+
+            if (user == null || book == null)
+                return HttpNotFound();
+
+            if (ModelState.IsValid)
+            {
+                if (review.Rating > 0 || review.Rating < 6)
+                {
+                    DecrementRatingsForDB();
+                    
+                    review.Book = book;
+                    review.User = user;
+                    DecrementOneRatingObj(review);
+
+                    db.Reviews.Add(review);
+                    db.SaveChanges();
+                    RedirectToAction("Index");
+                }
+            }
+
+            ModelState.AddModelError("", "Error: the rating code can only be between 0 and 5");
+
+
+            return View(review);
+        }
+
+        private void DecrementOneRatingObj(Review t)
+        {
+            if (t.Rating == 1)
+                t.Rating = -5;
+            else if (t.Rating == 2)
+                t.Rating = -3;
+            else if (t.Rating == 3)
+                t.Rating = 0;
+            else if (t.Rating == 4)
+                t.Rating = 3;
+
+        }
+
+        private void DecrementRatingsForDB()
+        {
+            foreach (var t in db.Reviews)
+            {
+
+                if (t.Rating == 1)
+                    t.Rating = -5;
+                else if (t.Rating == 2)
+                    t.Rating = -3;
+                else if (t.Rating == 3)
+                    t.Rating = 0;
+                else if (t.Rating == 4)
+                    t.Rating = 3;
+
+            }
+        }
 
         // GET: Author/Edit/5
         [Authorize]
