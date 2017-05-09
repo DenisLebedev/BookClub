@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.Entity;
 using System.Net;
 using System.Web.Routing;
+using System.Linq.Expressions;
 
 namespace ASPBookClub.Controllers
 {
@@ -264,12 +265,25 @@ namespace ASPBookClub.Controllers
         [Authorize]
         public ActionResult CreateAuthor([Bind(Include = "AuthorId,LastName,FirstName")] Author author)
         {
-            if (ModelState.IsValid)
+            
+            if (ModelState.IsValid || User.Identity.Name != "")
             {
-                db.Authors.Add(author);
-                db.SaveChanges();
-                return RedirectToAction("Index");
+
+                int temp = (from t in db.Authors
+                            where t.FirstName == author.FirstName &&
+                                 t.LastName == author.LastName
+                            select t).Count();
+
+                if (temp == 0)
+                {
+
+                    db.Authors.Add(author);
+                    db.SaveChanges();
+                    return RedirectToAction("Index");
+                }
             }
+
+            ModelState.AddModelError("", "Error: the author exist already");
 
             return View(author);
         }
@@ -320,12 +334,14 @@ namespace ASPBookClub.Controllers
             {
                 if (review.Rating > 0 || review.Rating < 6)
                 {
+                    review.Rating = (int?)review.Rating;
                     DecrementRatingsForDB();
                     
                     review.Book = book;
                     review.User = user;
                     DecrementOneRatingObj(review);
-
+                    
+                    //adding order
                     db.Reviews.Add(review);
                     db.SaveChanges();
                     RedirectToAction("Index");
