@@ -168,7 +168,19 @@ namespace ASPBookClub.Controllers
         [Authorize]
         public ActionResult CreateBook()
         {
-            return View();
+            Author author1 = new Author();
+            Author author2 = new Author();
+
+            ViewBag.LnOne = new SelectList(db.Authors, "LastName", "LastName", (author1.LastName + 
+                " " + author1.FirstName));
+            ViewBag.LnTwo = new SelectList(db.Authors, "LastName", "LastName", author2.LastName);
+
+
+            Book book = new Book();
+            book.Authors.Add(author1);
+            book.Authors.Add(author2);
+            
+            return View(book);
         }
 
         // POST: Book/Create
