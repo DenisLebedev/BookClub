@@ -72,11 +72,13 @@ namespace ASPBookClub.Controllers
 
            
 
-            IEnumerable<Book> tempList = (from item in db.Reviews
+            List<Book> tempList = (from item in db.Reviews
                                      where item.UserName == commonU
                                          && item.Rating >= 0
                                      orderby item.Rating descending
-                                     select item.Book);
+                                     select item.Book).ToList();
+
+
 
             List<Book> finalList = new List<Book>();
             int counter = 0;
@@ -191,6 +193,7 @@ namespace ASPBookClub.Controllers
             ViewBag.SearchList = items;
             ViewBag.SelectedAuthOne = null;
             ViewBag.SelectedAuthTwo = null;
+            //http://www.c-sharpcorner.com/UploadFile/4d9083/binding-dropdownlist-in-mvc-in-various-ways-in-mvc-with-data/
             return View();
         }
 

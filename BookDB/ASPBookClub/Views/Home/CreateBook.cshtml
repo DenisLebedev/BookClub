@@ -26,14 +26,19 @@
         <h4>Choose an author</h4>
 
         <div class="form-group">
-            @Html.DropDownList("SearchList", new SelectList(ViewBag.SearchList, "Value", "Text", ViewBag.SelectedAuthOne),
-            htmlAttributes: new { @class = "form-control" })
+            <div class="col-md-10">
+                @Html.DropDownList("SearchList", new SelectList(@ViewBag.SearchList, "Value", "Text", @ViewBag.SelectedAuthOne),
+                    htmlAttributes: new { @class = "form-control" })
+            </div>
         </div>
 
+
         <div class="form-group">
-            @Html.DropDownList("SearchList", new SelectList(ViewBag.SearchList, "Value", "Text", ViewBag.SelectedAuthTwo),
-            htmlAttributes: new { @class = "form-control" })
-        </div>
+            <div class="col-md-10">
+                @Html.DropDownList("SearchList", new SelectList(@ViewBag.SearchList, "Value", "Text", @ViewBag.SelectedAuthTwo),
+                    htmlAttributes: new { @class = "form-control" })
+            </div>
+       </div>
 
             @*
             @Html.DropDownListFor(model => model.Authors, new SelectList( Model.Authors, "FirstName", "LastName") )
