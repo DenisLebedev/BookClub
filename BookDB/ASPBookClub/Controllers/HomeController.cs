@@ -168,7 +168,7 @@ namespace ASPBookClub.Controllers
         [Authorize]
         public ActionResult CreateBook()
         {
-            Author author1 = new Author();
+            /*Author author1 = new Author();
             Author author2 = new Author();
 
             ViewBag.LnOne = new SelectList(db.Authors, "LastName", "LastName", (author1.LastName + 
@@ -178,9 +178,20 @@ namespace ASPBookClub.Controllers
 
             Book book = new Book();
             book.Authors.Add(author1);
-            book.Authors.Add(author2);
-            
-            return View(book);
+            book.Authors.Add(author2);*/
+
+            List<SelectListItem> items = new List<SelectListItem>();
+            items.Add(new SelectListItem { Text = "None" , Value = "default", Selected = true});
+            foreach (Author t in db.Authors)
+            {
+                items.Add(new SelectListItem { Text = (t.LastName + ", " + t.FirstName),
+                    Value = (t.LastName + ", " + t.FirstName)});
+            }
+
+            ViewBag.SearchList = items;
+            ViewBag.SelectedAuthOne = null;
+            ViewBag.SelectedAuthTwo = null;
+            return View();
         }
 
         // POST: Book/Create
@@ -189,10 +200,17 @@ namespace ASPBookClub.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public ActionResult CreateBook([Bind(Include = "BookId,Title,Description,Views")] Book book)
+        public ActionResult CreateBook([Bind(Include = "BookId,Title,Description")] Book book)
         {
+
+            if(ViewBag.SelectedAuthOne == null || ViewBag.SelectedAuthTwo == null || book == null)
+                return HttpNotFound();
+
             if (ModelState.IsValid)
             {
+                string temp = ViewBag.SelectedAuthOne;
+                string[] auth = temp.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
                 db.Books.Add(book);
                 db.SaveChanges();
                 return RedirectToAction("Index");

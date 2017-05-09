@@ -10,7 +10,11 @@
 }
 else
 {
-    <h4> @Html.ActionLink("Sign out", "LogOff", "User", null, null) </h4>
+    <h4>
+         @Html.ActionLink("Sign out", "LogOff", "User", null, null) |
+         @Html.ActionLink("Add a new Book", "CreateBook") |
+         @Html.ActionLink("Add a new Author", "CreateAuthor")
+    </h4>
 }
 
 <table class="table">
