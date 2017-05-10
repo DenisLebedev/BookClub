@@ -17,9 +17,17 @@ namespace ASPBookClub.Controllers
         private BookClubEntities db = new BookClubEntities();
 
         // GET: Home
+        /// <summary>
+        /// This is a get method that will render the main page for an authenticated
+        /// and a non-authenticated user. For an authenticated user I will display
+        /// the top 10 recommended books from the best matching user else I will
+        /// show the top 10 most viewed books.
+        /// </summary>
+        /// <returns> list of books that I will display to the user </returns>
         public ActionResult Index()
         {
             List<Book> list;
+            //Ternary operator to identify if a user is logged or not
             list = User.Identity.Name != "" ? 
                 RecommendedBooks(User.Identity.Name) : TopViewedBooks();
 
@@ -27,6 +35,10 @@ namespace ASPBookClub.Controllers
                 return View(list);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private List<Book> TopViewedBooks()
         {
             return (from item in db.Books
@@ -75,12 +87,13 @@ namespace ASPBookClub.Controllers
             List<Book> tempList = (from item in db.Reviews
                                      where item.UserName == commonU
                                          && item.Rating >= 0
+                                         && item.UserName != userN
                                      orderby item.Rating descending
                                      select item.Book).ToList();
 
 
 
-            List<Book> finalList = new List<Book>();
+            /*List<Book> finalList = new List<Book>();
             int counter = 0;
             for(int i = 0; i < tempList.Count() && counter < 10; i++)
             {
@@ -94,9 +107,9 @@ namespace ASPBookClub.Controllers
                     finalList.Add(temp);
                 }
 
-            }
+            }*/
 
-            return finalList;
+            return tempList;
         }
 
 
@@ -119,11 +132,12 @@ namespace ASPBookClub.Controllers
                 book.Views += 1;
                 db.SaveChanges();
             }
-
+            Book copy = null;
             if (User.Identity.Name != "")
             {
-                IncrementRatingForDisplay();
-                ViewBag.averageRat = AverageRating(book);
+                
+                copy  = IncrementRatingForDisplay(book);
+                ViewBag.averageRat = AverageRating(copy);
                 if (ViewBag.averageRat == null)
                     ViewBag.averageRat = "None";
                 else
@@ -131,7 +145,7 @@ namespace ASPBookClub.Controllers
                         Math.Round(ViewBag.averageRat,2);
             }
 
-            return View(book);
+            return View(copy);
         }
 
 
@@ -149,51 +163,64 @@ namespace ASPBookClub.Controllers
         }
 
 
-        private void IncrementRatingForDisplay()
+        private Book IncrementRatingForDisplay(Book book)
         {
-            foreach (var t in db.Reviews)
+            Book copy = new Book()
+            {
+                BookId = book.BookId,
+                Authors = book.Authors,
+                Description = book.Description,
+                Title = book.Title
+            };
+
+            ICollection<Review> reviewChanged = new List<Review>();
+    
+
+            foreach (var t in book.Reviews)
             {
 
-                    if (t.Rating == -5)
-                        t.Rating = 1;
-                    else if (t.Rating == -3)
-                        t.Rating = 2;
-                    else if (t.Rating == 0)
-                        t.Rating = 3;
-                    else if (t.Rating == 3)
-                        t.Rating = 4;
-               
+                reviewChanged.Add(new Review() {
+                    Book = t.Book,
+                    BookId = t.BookId,
+                    Content = t.Content,
+                    ReviewId = t.ReviewId,
+                    User = t.User,
+                    UserName = t.UserName,
+                    Rating = IncrementRating(t.Rating)
+
+                });                                
             }
+
+            copy.Reviews = reviewChanged;
+            return copy;
         } 
+
+
+        private int? IncrementRating(int? rating)
+        {
+            if (rating == -5)
+                rating = 1;
+            else if (rating == -3)
+                rating = 2;
+            else if (rating == 0)
+                rating = 3;
+            else if (rating == 3)
+                rating = 4;
+            
+
+            return rating;
+        }
+
 
         // GET: Book/Create
         [Authorize]
         public ActionResult CreateBook()
         {
-            /*Author author1 = new Author();
-            Author author2 = new Author();
 
-            ViewBag.LnOne = new SelectList(db.Authors, "LastName", "LastName", (author1.LastName + 
-                " " + author1.FirstName));
-            ViewBag.LnTwo = new SelectList(db.Authors, "LastName", "LastName", author2.LastName);
+            CreateListForDropDown();
 
 
-            Book book = new Book();
-            book.Authors.Add(author1);
-            book.Authors.Add(author2);*/
 
-            List<SelectListItem> items = new List<SelectListItem>();
-            items.Add(new SelectListItem { Text = "None" , Value = "default", Selected = true});
-            foreach (Author t in db.Authors)
-            {
-                items.Add(new SelectListItem { Text = (t.LastName + ", " + t.FirstName),
-                    Value = (t.LastName + ", " + t.FirstName)});
-            }
-
-            ViewBag.SearchList = items;
-            ViewBag.SelectedAuthOne = null;
-            ViewBag.SelectedAuthTwo = null;
-            //http://www.c-sharpcorner.com/UploadFile/4d9083/binding-dropdownlist-in-mvc-in-various-ways-in-mvc-with-data/
             return View();
         }
 
@@ -203,16 +230,45 @@ namespace ASPBookClub.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public ActionResult CreateBook([Bind(Include = "BookId,Title,Description")] Book book)
+        public ActionResult CreateBook([Bind(Include = "BookId,Title,Description")] Book book,
+            string searchListOne, string searchListTwo)
         {
 
-            if(ViewBag.SelectedAuthOne == null || ViewBag.SelectedAuthTwo == null || book == null)
+            if(book == null)
                 return HttpNotFound();
+
+            if (searchListOne == "default")
+            {
+                ModelState.AddModelError("", "Error: you must select an author from the first dropdown");
+                return View(book);
+            }
 
             if (ModelState.IsValid)
             {
-                string temp = ViewBag.SelectedAuthOne;
-                string[] auth = temp.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] authLnFn = searchListOne.Split(' ');
+                Author auth1 = GetAuthorPerName(authLnFn[1], authLnFn[0]);
+
+                if (searchListTwo != "default")
+                {
+                    authLnFn = searchListTwo.Split(' ');
+                    Author auth2 = GetAuthorPerName(authLnFn[1], authLnFn[0]);
+
+                    if (auth1 == auth2)
+                    {
+                        CreateListForDropDown();
+                        ModelState.AddModelError("", "Error: you selected the same author twice");
+                        return View(book);
+                    }
+
+                    book.Authors.Add(auth1);
+                    book.Authors.Add(auth2);
+                } else
+                {
+                    book.Authors.Add(auth1);
+                }
+
+
+
 
                 db.Books.Add(book);
                 db.SaveChanges();
@@ -222,40 +278,31 @@ namespace ASPBookClub.Controllers
             return View(book);
         }
 
-        // GET: Book/Edit/5
-        [Authorize]
-        public ActionResult EditBook(int? id)
+
+        private void CreateListForDropDown()
         {
-            if (id == null)
+            List<SelectListItem> items = new List<SelectListItem>();
+            items.Add(new SelectListItem { Text = "None", Value = "default", Selected = true });
+            foreach (Author t in db.Authors)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                items.Add(new SelectListItem
+                {
+                    Text = (t.LastName + ", " + t.FirstName),
+                    Value = (t.LastName + " " + t.FirstName)
+                });
             }
-            Book book = db.Books.Find(id);
-            if (book == null)
-            {
-                return HttpNotFound();
-            }
-            return View(book);
+
+            ViewBag.SearchListOne = items;
+            ViewBag.SearchListTwo = items;
         }
 
-        // POST: Book/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize]
-        public ActionResult EditBook([Bind(Include = "BookId,Title,Description,Views")] Book book)
+        private Author GetAuthorPerName(string fn, string ln)
         {
-            if (ModelState.IsValid)
-            {
-                db.Entry(book).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-            return View(book);
+            return (from t in db.Authors
+                    where t.LastName == ln &&
+                          t.FirstName == fn
+                    select t).FirstOrDefault();
         }
-
-
 
         // GET: Author/Details/5
         [Authorize]
@@ -333,9 +380,6 @@ namespace ASPBookClub.Controllers
             if (book == null || user == null)
                 return HttpNotFound();
 
-            /*if(ViewBag.bookObj == null)
-                return HttpNotFound();*/
-
             Review review = new Review()
             {
                 BookId = book.BookId,
@@ -350,10 +394,11 @@ namespace ASPBookClub.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public ActionResult CreateReview([Bind(Include = "Bookid, UserName, Rating, Content")] Review review)
+        public ActionResult CreateReview([Bind(Include = "Bookid, UserName, Rating, Content")] Review review, 
+            Nullable<int> rating)
         {
 
-            if (review == null)
+            if (review == null || rating == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
@@ -365,10 +410,10 @@ namespace ASPBookClub.Controllers
 
             if (ModelState.IsValid)
             {
-                if (review.Rating > 0 || review.Rating < 6)
+                if (rating >= 0 && rating < 6)
                 {
-                    review.Rating = (int?)review.Rating;
-                    DecrementRatingsForDB();
+                    
+                    review.Rating = rating;
                     
                     review.Book = book;
                     review.User = user;
@@ -377,7 +422,7 @@ namespace ASPBookClub.Controllers
                     //adding order
                     db.Reviews.Add(review);
                     db.SaveChanges();
-                    RedirectToAction("Index");
+                    return RedirectToAction("Index");
                 }
             }
 
@@ -399,58 +444,9 @@ namespace ASPBookClub.Controllers
                 t.Rating = 3;
 
         }
+      
 
-        private void DecrementRatingsForDB()
-        {
-            foreach (var t in db.Reviews)
-            {
-
-                if (t.Rating == 1)
-                    t.Rating = -5;
-                else if (t.Rating == 2)
-                    t.Rating = -3;
-                else if (t.Rating == 3)
-                    t.Rating = 0;
-                else if (t.Rating == 4)
-                    t.Rating = 3;
-
-            }
-        }
-
-        // GET: Author/Edit/5
-        [Authorize]
-        public ActionResult EditAuthor(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Author author = db.Authors.Find(id);
-            if (author == null)
-            {
-                return HttpNotFound();
-            }
-            return View(author);
-        }
-
-        // POST: Author/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize]
-        public ActionResult EditAuthor([Bind(Include = "AuthorId,LastName,FirstName")] Author author)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Entry(author).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-            return View(author);
-        }
-
-
+      
         protected override void Dispose(bool disposing)
         {
             if (disposing)

@@ -159,7 +159,6 @@
     <Content Include="Web.config" />
     <Content Include="Views\Home\CreateAuthor.cshtml" />
     <Content Include="Views\Home\DetailsAuthor.cshtml" />
-    <Content Include="Views\Home\EditAuthor.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\User\Register.cshtml" />
     <Content Include="Views\User\Login.cshtml" />
@@ -217,7 +216,6 @@
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Home\CreateBook.cshtml" />
     <Content Include="Views\Home\DetailsBook.cshtml" />
-    <Content Include="Views\Home\EditBook.cshtml" />
     <Content Include="Scripts\jquery-1.10.2.min.map" />
     <Content Include="Views\Home\CreateReview.cshtml" />
     <None Include="Web.Debug.config">
