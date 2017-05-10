@@ -11,7 +11,16 @@ using System.Web.Routing;
 using System.Linq.Expressions;
 
 namespace ASPBookClub.Controllers
-{
+{   
+    /// <summary>
+    /// This class handle the basic task of a library online.
+    /// Capacity to add new books, authors. See details
+    /// of an author and a book. This class deal with
+    /// authorized and non-authorized user. Also, 
+    /// a recommendation system is made for authorized user. The
+    /// display will change in the variation of an authorized
+    /// and a non-authorized user.
+    /// </summary>
     public class HomeController : Controller
     {
         private BookClubEntities db = new BookClubEntities();
@@ -64,10 +73,10 @@ namespace ASPBookClub.Controllers
 
             //Grouping each user with their reviews
             IEnumerable<IGrouping<string, Review>> allusersRev =
-                from bk in db.Reviews
+                (from bk in db.Reviews
                 where bk.UserName != userN
                 group bk by bk.UserName into groupedUser
-                select groupedUser;
+                select groupedUser).ToList();
 
 
             //Used variable to find the highest rating
@@ -111,32 +120,13 @@ namespace ASPBookClub.Controllers
              * higher than -1. Also, this book should not match
              * the book that the given user already read.
              */
-            List<Book> tempList = (from item in db.Reviews
-                                     where item.UserName == commonU
+             return (from item in db.Reviews
+                                     where item.UserName == commonU // match what the best user read
                                          && item.Rating >= 0
-                                         && item.UserName != userN
+                                         && item.UserName != userN //remove what the given user read
                                      orderby item.Rating descending
-                                     select item.Book).ToList();
+                                     select item.Book).Take(10).ToList();
 
-
-
-            /*List<Book> finalList = new List<Book>();
-            int counter = 0;
-            for(int i = 0; i < tempList.Count() && counter < 10; i++)
-            {
-                Book temp = userRead.Where(x => 
-                    x.BookId == tempList.ElementAt(i).BookId).FirstOrDefault()?.Book;
-
-
-                if(temp != null)
-                {
-                    counter++;
-                    finalList.Add(temp);
-                }
-
-            }*/
-
-            return tempList;
         }
 
 
@@ -287,9 +277,11 @@ namespace ASPBookClub.Controllers
                 rating = 3;
             else if (rating == 3)
                 rating = 4;
-            else
+            else if (rating == 5)
+                rating = 5;
+            /*else
                 //Default value
-                rating = null;
+                rating = null;*/
 
             return rating;
         }
@@ -447,7 +439,7 @@ namespace ASPBookClub.Controllers
         /// The method is only available for an autorized user.
         /// </summary>
         /// <param name="id"></param>
-        /// <returns></returns>
+        /// <returns> redirect to a view wiht a new author object</returns>
         [Authorize]
         public ActionResult DetailsAuthor(int? id)
         {
@@ -478,6 +470,12 @@ namespace ASPBookClub.Controllers
 
 
         // GET: Author/Create
+        /// <summary>
+        /// Theg et method just redirect to the
+        /// right view and only an authorized user can have
+        /// access.
+        /// </summary>
+        /// <returns>redirect to the right view</returns>
         [Authorize]
         public ActionResult CreateAuthor()
         {
@@ -487,15 +485,30 @@ namespace ASPBookClub.Controllers
         // POST: Author/Create
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+        /// <summary>
+        /// Ensure that the new author object that will be created will match
+        /// the database conditions. The first and last name should be
+        /// unique when we are adding new authors due to our settings.
+        /// </summary>
+        /// <param name="author">new author object</param>
+        /// <returns>if there is issues then I redirect to the create view again</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
         public ActionResult CreateAuthor([Bind(Include = "AuthorId,LastName,FirstName")] Author author)
         {
-            
+            //Invalid input
+            if (author.FirstName == "" || author.LastName == "")
+            {
+                ModelState.AddModelError("", "Error: The name given is empty");
+                return View(author);
+            }
+
+            //If the user is not connected we do not go in - extra validation
             if (ModelState.IsValid || User.Identity.Name != "")
             {
-
+                //If temp has 0 that mean we did not found an author with
+                //the given first and last name
                 int temp = (from t in db.Authors
                             where t.FirstName == author.FirstName &&
                                  t.LastName == author.LastName
@@ -515,18 +528,28 @@ namespace ASPBookClub.Controllers
             return View(author);
         }
 
+        /// <summary>
+        /// The get method will create a new review object
+        /// with already some data inside using the given id.
+        /// Only an authorized user should have access to this plugin.
+        /// </summary>
+        /// <param name="id">the id of a book</param>
+        /// <returns>redirect to the right view</returns>
         [Authorize]
         public ActionResult CreateReview(int? id)
         {
             if (id == null)
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             
+            //Grab the data necessary to create a new review
             Book book = db.Books.Find(id);
             User user = db.Users.Find(User.Identity.Name);
 
+            //Ensure that the book and the user exist
             if (book == null || user == null)
                 return HttpNotFound();
 
+            //Creation of a new review object
             Review review = new Review()
             {
                 BookId = book.BookId,
@@ -535,9 +558,18 @@ namespace ASPBookClub.Controllers
                 User = user
             };
 
+            //Send the review object with already data inside
             return View(review);
         }
 
+        /// <summary>
+        /// The post method will save the new review made by an authorized
+        /// user. Through the process data validation is made to ensure
+        /// that we enter a new review with existant data.
+        /// </summary>
+        /// <param name="review">review object</param>
+        /// <param name="rating">nullable integer</param>
+        /// <returns>redirect to the view if the data given is invalid</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
@@ -545,40 +577,54 @@ namespace ASPBookClub.Controllers
             Nullable<int> rating)
         {
 
+            //Should not have null values
             if (review == null || rating == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
+
+            //Grabbing data from the get
             User user = db.Users.Find(review.UserName);
             Book book = db.Books.Find(review.BookId);
 
+            //Data validation
             if (user == null || book == null)
                 return HttpNotFound();
 
             if (ModelState.IsValid)
             {
+                //The rating can only be in a range of 0 to 5 inclusive
                 if (rating >= 0 && rating < 6)
                 {
-                    
-                    review.Rating = rating;
-                    
+                    //Set the review elements
+                    review.Rating = rating;                
                     review.Book = book;
                     review.User = user;
+
+                    //Decrement the rating for our database
                     DecrementOneRatingObj(review);
                     
-                    //adding order
+                    //Adding
                     db.Reviews.Add(review);
                     db.SaveChanges();
+
+                    //Redirect to the main page
                     return RedirectToAction("Index");
                 }
             }
 
+            //Clear message
             ModelState.AddModelError("", "Error: the rating code can only be between 0 and 5");
 
 
             return View(review);
         }
 
+        /// <summary>
+        /// Will change the current rating of this object
+        /// to a valid value inside our database
+        /// </summary>
+        /// <param name="t"> review object</param>
         private void DecrementOneRatingObj(Review t)
         {
             if (t.Rating == 1)
@@ -593,7 +639,11 @@ namespace ASPBookClub.Controllers
         }
       
 
-      
+        /// <summary>
+        /// Allow to free the ressources when the task
+        /// is completed. Like close the database connection.
+        /// </summary>
+        /// <param name="disposing"> boolean </param>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
