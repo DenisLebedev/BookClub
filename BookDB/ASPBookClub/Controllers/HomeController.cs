@@ -603,8 +603,11 @@ namespace ASPBookClub.Controllers
 
                     //Decrement the rating for our database
                     DecrementOneRatingObj(review);
-                    
+
+
                     //Adding
+                    book.Reviews.Add(review);
+                    user.Reviews.Add(review);
                     db.Reviews.Add(review);
                     db.SaveChanges();
 
