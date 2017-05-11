@@ -99,6 +99,7 @@ namespace ASPBookClub.Controllers
                 //User exist
                 if (userObj != null)
                 {
+                  
                     //Use cookies to keep the user on
                     FormsAuthentication.RedirectFromLoginPage(userObj.UserName, false);
                 }

@@ -180,13 +180,12 @@ namespace ASPBookClub.Controllers
                 db.SaveChanges();
             }
 
-            //This book object will hold the copy
-            Book copy = null;
+           
             if (User.Identity.Name != "")
             {
                 
                 //Creating a copy of the given book and change the rating for the UI
-                copy  = IncrementRatingForDisplay(book);
+                Book copy  = IncrementRatingForDisplay(book);
 
                 //Calculating the average
                 ViewBag.averageRat = AverageRating(copy);
@@ -199,9 +198,11 @@ namespace ASPBookClub.Controllers
                     //The choice about how much a person will round the rating should be give
                     ViewBag.averageRat = 
                         Math.Round(ViewBag.averageRat,2);
+
+                return View(copy);
             }
 
-            return View(copy);
+            return View(book);
         }
 
         /// <summary>
@@ -220,8 +221,7 @@ namespace ASPBookClub.Controllers
              * process the result and get the average from 
              * it using existant method.
              */
-            var avg = (from t in db.Reviews
-                       where t.Book.BookId == bk.BookId
+            var avg = (from t in bk.Reviews
                        select new
                        {
                            Rating = t.Rating,
