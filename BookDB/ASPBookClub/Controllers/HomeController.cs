@@ -25,6 +25,15 @@ namespace ASPBookClub.Controllers
     {
         private BookClubEntities db = new BookClubEntities();
 
+
+        /**
+         * URL: http://waldo2.dawsoncollege.qc.ca/1532444/project/
+         * ISSUE:  the redirect works while running c# code, but is not working for
+         *         waldo2. The issue happen only when the user try to connect else 
+         *         everything works.
+         */
+
+
         // GET: Home
         /// <summary>
         /// This is a get method that will render the main page for an authenticated
@@ -40,8 +49,14 @@ namespace ASPBookClub.Controllers
             list = User.Identity.Name != "" ? 
                 RecommendedBooks(User.Identity.Name) : TopViewedBooks();
 
-
                 return View(list);
+        }
+
+
+        public ActionResult SeeAllBooks()
+        {
+            return View((from t in db.Books
+                         select t).ToList());
         }
 
         /// <summary>

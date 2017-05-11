@@ -1,0 +1,39 @@
+﻿@model List<ASPBookClub.Models.Book>
+    @{
+        ViewBag.Title = "SeeAllBooks";
+    }
+
+    <h2>Index</h2>
+    @if (User.Identity.Name == "")
+    {
+        <h4> @Html.ActionLink("Sign in", "Login", "User", new { returnUrl = "/Home/Index" }, null) | @Html.ActionLink("Sign up", "Register", "User", null, null)</h4>
+    }
+    else
+    {
+        <h4>
+            @Html.ActionLink("Sign out", "LogOff", "User", null, null) |
+            @Html.ActionLink("Add a new Book", "CreateBook") |
+            @Html.ActionLink("Add a new Author", "CreateAuthor")
+        </h4>
+    }
+
+    <h4>@Html.ActionLink("Back to recommendation", "Index")</h4>
+
+    <table class="table">
+
+        @foreach (var item in Model)
+        {
+            <tr>
+
+                <td>
+                    @Html.DisplayFor(modelItem => item.Title) has
+                    @Html.DisplayFor(modelItem => item.Views) views
+                
+                </td>
+
+                <td>
+                    | @Html.ActionLink("Details", "DetailsBook", new { id = item.BookId }) |
+                </td>
+            </tr>
+        }
+    </table>
